@@ -19,7 +19,8 @@ class NoteFactory extends Factory
     {
         return [
             'title' => fake()->sentence(4),
-            'content' => fake()->optional()->paragraph(),
+            'description' => fake()->optional()->paragraph(),
+            'statu' => fake()->randomElement(['pending', 'in_progress', 'done']),
         ];
     }
 }

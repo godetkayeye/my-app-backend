@@ -19,7 +19,7 @@ class NoteApiTest extends TestCase
         $ownerNote = Note::factory()->for($owner)->create();
         Note::factory()->for($other)->create();
 
-        $response = $this->actingAs($owner, 'sanctum')->getJson('/api/notes');
+        $response = $this->actingAs($owner, 'sanctum')->getJson('/api/tasks');
 
         $response
             ->assertOk()
@@ -27,31 +27,34 @@ class NoteApiTest extends TestCase
             ->assertJsonPath('data.0.id', $ownerNote->id);
     }
 
-    public function test_user_can_crud_own_note(): void
+    public function test_user_can_crud_own_task(): void
     {
         $user = User::factory()->create();
         $auth = $this->actingAs($user, 'sanctum');
 
-        $create = $auth->postJson('/api/notes', [
-            'title' => 'My note',
-            'content' => 'My content',
+        $create = $auth->postJson('/api/tasks', [
+            'title' => 'My task',
+            'description' => 'My description',
+            'statu' => 'pending',
         ]);
 
         $noteId = $create->json('data.id');
 
-        $create->assertCreated()->assertJsonPath('data.title', 'My note');
+        $create->assertCreated()->assertJsonPath('data.title', 'My task');
 
-        $auth->getJson("/api/notes/{$noteId}")
+        $auth->getJson("/api/tasks/{$noteId}")
             ->assertOk()
-            ->assertJsonPath('data.content', 'My content');
+            ->assertJsonPath('data.description', 'My description');
 
-        $auth->putJson("/api/notes/{$noteId}", [
+        $auth->putJson("/api/tasks/{$noteId}", [
             'title' => 'Updated',
-            'content' => 'Updated content',
+            'description' => 'Updated description',
+            'statu' => 'done',
         ])->assertOk()
-            ->assertJsonPath('data.title', 'Updated');
+            ->assertJsonPath('data.title', 'Updated')
+            ->assertJsonPath('data.statu', 'done');
 
-        $auth->deleteJson("/api/notes/{$noteId}")
+        $auth->deleteJson("/api/tasks/{$noteId}")
             ->assertNoContent();
     }
 
@@ -62,16 +65,16 @@ class NoteApiTest extends TestCase
         $note = Note::factory()->for($owner)->create();
 
         $this->actingAs($attacker, 'sanctum')
-            ->getJson("/api/notes/{$note->id}")
+            ->getJson("/api/tasks/{$note->id}")
             ->assertForbidden();
 
         $this->actingAs($attacker, 'sanctum')
-            ->putJson("/api/notes/{$note->id}", [
+            ->putJson("/api/tasks/{$note->id}", [
                 'title' => 'Hack',
             ])->assertForbidden();
 
         $this->actingAs($attacker, 'sanctum')
-            ->deleteJson("/api/notes/{$note->id}")
+            ->deleteJson("/api/tasks/{$note->id}")
             ->assertForbidden();
     }
 }

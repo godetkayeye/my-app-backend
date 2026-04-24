@@ -1,11 +1,16 @@
-# API Laravel — Authentification & Notes
+# API Laravel — Backend MVC (PostgreSQL + Sanctum)
 
-API REST avec **Laravel** et **Laravel Sanctum** (tokens). Chaque utilisateur ne voit et ne modifie que **ses propres notes** (`user_id` + policies).
+API REST en **Laravel** structurée en **MVC**, avec :
+- **PostgreSQL** (obligatoire)
+- **Eloquent ORM** + relations (`User` 1..N `Task`)
+- **Validation via FormRequest**
+- **API JSON**
+- **Authentification par token avec Laravel Sanctum**
 
 ## Prérequis
 
 - PHP **8.3+** avec extensions courantes Laravel
-- Pour SQLite : `pdo_sqlite` et `sqlite3` (ex. paquet `php8.4-sqlite3` sur Ubuntu)
+- PostgreSQL en local (ou distant) + extension PHP `pdo_pgsql`
 - [Composer](https://getcomposer.org/)
 
 ## Installation
@@ -14,11 +19,10 @@ API REST avec **Laravel** et **Laravel Sanctum** (tokens). Chaque utilisateur ne
 composer install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite   # si le fichier n’existe pas encore
 php artisan migrate
 ```
 
-Vérifier dans `.env` : `DB_CONNECTION=sqlite` (le fichier par défaut est `database/database.sqlite`).
+Vérifier dans `.env` : `DB_CONNECTION=pgsql` et renseigner `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`.
 
 ## Lancer le serveur
 
@@ -36,15 +40,35 @@ Base URL locale : `http://127.0.0.1:8000` (préfixe API : `/api`).
 | `POST` | `/api/login` | Non (throttle login) |
 | `POST` | `/api/logout` | Bearer token |
 | `GET` | `/api/me` | Bearer token |
-| `GET` | `/api/notes` | Bearer token |
-| `POST` | `/api/notes` | Bearer token |
-| `GET` | `/api/notes/{id}` | Bearer token |
-| `PUT` / `PATCH` | `/api/notes/{id}` | Bearer token |
-| `DELETE` | `/api/notes/{id}` | Bearer token |
+| `GET` | `/api/tasks` | Bearer token |
+| `POST` | `/api/tasks` | Bearer token |
+| `GET` | `/api/tasks/{id}` | Bearer token |
+| `PUT` / `PATCH` | `/api/tasks/{id}` | Bearer token |
+| `DELETE` | `/api/tasks/{id}` | Bearer token |
 
 **Postman** : après login ou register, copier le champ `token` de la réponse JSON, puis **Authorization → Bearer Token**.
 
 En-têtes utiles : `Accept: application/json`, `Content-Type: application/json` pour le corps JSON.
+
+## Architecture demandée (checklist)
+
+- **MVC** : contrôleurs dans `app/Http/Controllers/Api`, modèles dans `app/Models`
+- **PostgreSQL** : connexion par défaut via `DB_CONNECTION=pgsql`
+- **Eloquent & Relations** : `User::notes()` (`hasMany`) et `Note::user()` (`belongsTo`) pour la ressource Task
+- **Validation FormRequest** :
+  - `RegisterRequest`, `LoginRequest`
+  - `StoreNoteRequest`, `UpdateNoteRequest`
+- **API JSON** : réponses via `response()->json(...)` et API Resources (`UserResource`, `NoteResource`)
+- **Sanctum** : login/register génèrent un token, routes protégées par `auth:sanctum`
+
+## Format des données Task
+
+La ressource renvoyée en JSON contient :
+- `id`
+- `user_id`
+- `title`
+- `description`
+- `statu` (valeurs supportées : `pending`, `in_progress`, `done`)
 
 ## Tests
 
@@ -52,9 +76,9 @@ En-têtes utiles : `Accept: application/json`, `Content-Type: application/json` 
 php artisan test
 ```
 
-## Données (SQLite)
+## Données (PostgreSQL)
 
-Fichier : `database/database.sqlite`. Aperçu rapide :
+Aperçu rapide :
 
 ```bash
 php artisan db:show

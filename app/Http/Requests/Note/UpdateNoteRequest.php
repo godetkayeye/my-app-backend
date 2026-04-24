@@ -24,7 +24,8 @@ class UpdateNoteRequest extends FormRequest
     {
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'content' => ['sometimes', 'nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'statu' => ['sometimes', 'required', 'string', 'in:pending,in_progress,done'],
         ];
     }
 }
